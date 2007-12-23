@@ -7,18 +7,30 @@
    //
 	class Database_Compare
    {
+   	private $oDB_Template1 = null;
+   	
       var $oDB_Master;
       var $oDB_Update;
+      
+      public $aDatabases = array();
         
       ///////////////////////////////////////////////////////////////////////////////////////////
       // Database_Compare()
       //
       // Description: Constructor
 		//
-		function Database_Compare()
+		public function __construct()
 		{
+			$oDB_Template1 = Database::getConnection( array(
+				"driver" => "postgres",
+				"name" => "template1",
+				"user" => DATABASE_USER,
+				"password" => DATABASE_PASS
+			) );
+			
+			$this->aDatabases = $oDB_Template1->GetDatabases();
 
-		} // Database()
+		} // __construct()
 
 
 		/////////////////////////////////////////////////////////////////////////////////////////////

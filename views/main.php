@@ -1,6 +1,4 @@
 <?php
-	$aDatabases = $oDB_General->FetchDatabases();
-
 	require( "header.php" );
 ?>
 
@@ -23,12 +21,12 @@
 		<fieldset>			
 			<?php Form::Label( array( "for" => "master_database", "label" => "Master Database" ) ); ?>
 			<?php Form::Select( array( "id" => "master_database", "name" => "master_database", 
-				"options" => $aDatabases ) ); ?>
+				"options" => $oDBCompare->aDatabases ) ); ?>
 			<br style="clear: both;" />
 
 			<?php Form::Label( array( "for" => "update_database", "label" => "Update Database" ) ); ?>
 			<?php Form::Select( array( "id" => "update_database", "name" => "update_database", 
-				"options" => $aDatabases ) ); ?>
+				"options" => $oDBCompare->aDatabases ) ); ?>
 
 			<br style="clear: both;" />
 

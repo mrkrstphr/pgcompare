@@ -20,7 +20,7 @@
 	{
 		case "proc_compare":
 			Form::LoadArray( $_POST );
-			
+						
 			if( $sFile_Output == "t" )
 			{
 				header( "Content-type: text/plain;" );
