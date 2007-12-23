@@ -1,9 +1,6 @@
 <?php
 	require( "config.php" );
-	
-	$oForm = new Form();
-	
-	
+
 	$sAction = isset( $_POST[ "action" ] ) ? $_POST[ "action" ] : 
 		( isset( $_GET[ "action" ] ) ? $_GET[ "action" ] : "" );
 		
@@ -22,7 +19,7 @@
 	switch( $sAction )
 	{
 		case "proc_compare":
-			$oForm->LoadFromSubmit();
+			Form::LoadArray( $_POST );
 			
 			if( $sFile_Output == "t" )
 			{

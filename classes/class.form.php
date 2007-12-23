@@ -1,213 +1,215 @@
 <?php
-/////////////////////////////////////////////////////////////////////////////////
-// class_form.req
-//
-// Description:
-//
-
-/////////////////////////////////////////////////////////////////////////////////
-class Form
-//
-// Description:
-// 
-//
-{
-   var $aFields = array();
-   var $aFiles = array();
-   
-   var $aErrors = array();
-   var $iError_Count = 0;
-   var $aNotes = array();
-   
-
-	////////////////////////////////////////////////////////////////////////////////////////////////
-	function Form()
-	//
-	// Description:
-	//
+/***************************************************************************************************
+ * OpenAvanti
+ *
+ * OpenAvanti is an open source, object oriented framework for PHP 5+
+ *
+ * @author			Kristopher Wilson
+ * @dependencies 	FileInfo
+ * @copyright		Copyright (c) 2008, Kristopher Wilson
+ * @license			http://www.openavanti.com/license
+ * @link				http://www.openavanti.com
+ * @version			0.05a
+ *
+ */
+ 
+	/**
+	 * A library of form field generation helpers to automate data preservation
+	 *
+	 * @category	Forms
+	 * @author		Kristopher Wilson
+	 * @link			http://www.openavanti.com/docs/form
+	 */
+	class Form 
 	{
-
-
-	} // Form()
-
-
-	////////////////////////////////////////////////////////////////////////////////
-	function LoadFromSubmit()
-	//
-	// Description:
-	//
-	{
-	
-		foreach( $_GET as $sField => $sValue )
-		{
-			$this->aFields[ $sField ] = $sValue;
-		}
+		public static $aFields = array();
 		
-		foreach( $_POST as $sField => $sValue )
+		/**
+		 * Loads the specified array into the classes aFields array. These values are later
+		 * used by the field generation helpers for setting the value of the form field.		 
+		 * 
+		 * @argument array An array of keys and values to load into the forms data array
+		 * @returns void
+		 */
+		public static function LoadArray( $aArray )
 		{
-			$this->aFields[ $sField ] = $sValue;
-		}
-
-		foreach( $_FILES as $sField => $aValue )
-		{
-			$this->aFiles[ $sField ] = $aValue;
-		}
-
-		return( true );
-
-	}  // LoadSubmit()
-
-
-	//////////////////////////////////////////////////////////////////////////////
-	function SetError( $sField, $sMsg )
-	//
-	// Description:
-	//
-	{
-		$this->iError_Count++;
-		$this->aErrors[ $sField ] = true;
-		$this->aNotes[ $sField ] = $sMsg;
-
-		return( true );
-	}
-	
-
-	//
-	// Form generation methods
-	//
-
-
-	////////////////////////////////////////////////////////////////////////////////////////////////
-	function GenElement( $sName, $sType, $aAttributes = null, $bReturn = false )
-	//
-	// Description:
-	//
-	{
-		$aValidTypes = array( 
-			"text", "hidden", "check", "radio", "file", "submit", "button", "password"
-		);
+			self::$aFields += $aArray;
 		
-		if( !in_array( $sType, $aValidTypes ) )
-		{
-			return( false );
-		}
+		} // LoadArray()
 		
-		$sElement = "<input type=\"" . $sType . "\" name=\"" . $sName . "\" ";
 		
-		if( isset( $this->aFields[ $sName ] ) )
+		/**
+		 * Generate a label for the form. Note that the supplied attributes are not validated to be
+		 * valid attributes for the element. Each element provided is added to the XHTML tag. The
+		 * "label" element of aAttributes specifies the text of the label.		 	  
+		 * 
+		 * @argument array An array of attributes for the HTML element
+		 * @argument bool Controls whether or not to return the HTML, otherwise echo it, default false
+		 * @returns void/string If bReturn is true, returns a string with the XHTML, otherwise void
+		 */
+		public static function Label( $aAttributes, $bReturn = false )
 		{
-			$sElement .= "value=\"" . $this->aFields[ $sName ] . "\" ";
+			$sLabel = "Element";
 			
-			if( isset( $aAttributes[ "value" ] ) )
+			if( isset( $aAttributes[ "label" ] ) )
 			{
-				unset( $aAttributes[ "value" ] );
+				$sLabel = $aAttributes[ "label" ];
+			
+				unset( $aAttributes[ "label" ] );
+			}	
+			
+			$sInput = "<label ";
+			
+			foreach( $aAttributes as $sKey => $sValue )
+			{
+				$sInput .= "{$sKey}=\"{$sValue}\" ";
 			}
-		}
-		
-		foreach( $aAttributes as $sName => $sValue )
-		{
-			$sElement .= $sName . "=\"" . $sValue . "\" ";
-		}
-		
-		$sElement .= " />";
-		
-		if( $bReturn )
-		{
-			return( $sElement );
-		}
-		else
-		{
-			echo $sElement;
-		}
-		
-	} // GetElement()
-
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	function GenLabel( $sDisplay, $sName, $bReturn = false )
-	//
-	// Description: 
-	//
-	{
-
-		if( isset( $this->aNotes[ $sName ] ) && !blank( $this->aNotes[ $sName ] ) )
-		{
-			$sLabel = "<span class=\"formerror\"><label for=\"" . $sName . "\">" . $sDisplay . "</label></span>";
-		}
-		else
-		{
-			$sLabel = "<label for=\"" . $sName . "\">" . $sDisplay . "</label>";
-		}
-
-		if( $bReturn )
-		{
-			return( $sLabel );
-		}
-		else
-		{
-			echo $sLabel;
-		}
-
-	} // GenLabel()
-
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	function GenSelect( $sName, $aValues, $sDefault = "", $aAttributes = array(), 
-		$bReverse = false, $bSort = true )
-	//
-	// Description:
-	//    Generates select and option tags
-	//
-	{
-
-		if( $bSort )
-		{
-			ksort( $aValues );
-		}
-
-		$sSelected = isset( $this->aFields[ $sName ] ) ? $this->aFields[ $sName ] : $sDefault;
-
-
-		$sElement = "<select name=\"" . $sName . "\" ";
-
-		foreach( $aAttributes as $sName => $sValue )
-		{
-			$sElement .= $sName . "=\"" . $sValue . "\" ";
-		}
-
-		$sElement .= ">";
-
-
-		foreach( $aValues as $sKey => $sValue )
-		{
-			if( $bReverse )
+			
+			$sInput .= ">{$sLabel}:</label>";
+			
+			
+			if( $bReturn )
 			{
-				$sInput_Key = $sValue; $sInput_Value = $sKey;
+				return( $sInput );
 			}
 			else
 			{
-				$sInput_Key = $sKey; $sInput_Value = $sValue;
+				echo $sInput;
 			}
-
-			$sElement .= "<option value=\"" . $sInput_Key . "\" " . 
-				( ( $sInput_Value == $sSelected ) ? "selected=\"selected\" " : "" ) . " />" . 
-				$sInput_Value . "</option>";
-		}
-
-		$sElement .= "</select>";
-
-		if( $bReturn )
+			
+		} // Label()
+		
+		
+		/**
+		 * Generate an input element for the form. Note that the supplied attributes are not 
+		 * validated to be valid attributes for the element. Each element provided is added to the 
+		 * XHTML tag.		  
+		 * 
+		 * @argument array An array of attributes for the HTML element
+		 * @argument bool Controls whether or not to return the HTML, otherwise echo it, default false
+		 * @returns void/string If bReturn is true, returns a string with the XHTML, otherwise void
+		 */
+		public static function Input( $aAttributes, $bReturn = false )
 		{
-			return( $sElement );
-		}
-		else
+			if( isset( self::$aFields[ $aAttributes[ "name" ] ] ) )
+			{
+				$aAttributes[ "value" ] = self::$aFields[ $aAttributes[ "name" ] ];
+			}
+		
+			$sInput = "<input ";
+			
+			foreach( $aAttributes as $sKey => $sValue )
+			{
+				$sInput .= "{$sKey}=\"{$sValue}\" ";
+			}
+			
+			$sInput .= " />";
+			
+			
+			if( $bReturn )
+			{
+				return( $sInput );
+			}
+			else
+			{
+				echo $sInput;
+			}
+			
+		} // Input()
+		
+		
+		/**
+		 * Generate a select element for the form. Note that the supplied attributes are not 
+		 * validated to be valid attributes for the element. Each element provided is added to the 
+		 * XHTML tag.
+		 * 
+		 * The options are specified by aAttributes[ options ] as an array of key => values to
+		 * display in the select		 
+		 *		 		 
+		 * The default (selected) attribute is controlled by aAttributes[ default ], which should
+		 * match a valid key in aAttributes[ options ]		 		 		   
+		 * 
+		 * @argument array An array of attributes for the HTML element
+		 * @argument bool Controls whether or not to return the HTML, otherwise echo it, default false
+		 * @returns void/string If bReturn is true, returns a string with the XHTML, otherwise void
+		 */
+		public static function Select( $aAttributes, $bReturn = false )
 		{
-			echo $sElement;
-		}
+			$sDefault = "";
+			
+			if( isset( self::$aFields[ $aAttributes[ "name" ] ] ) )
+			{
+				$sDefault = self::$aFields[ $aAttributes[ "name" ] ];
+			}
+			else if( isset( $aAttributes[ "default" ] ) )
+			{
+				$sDefault = $aAttributes[ "default" ];
+			}
+		
+			$sSelect = "<select name=\"" . $aAttributes[ "name" ] . "\">\n";
+			
+			foreach( $aAttributes[ "options" ] as $sKey => $sValue )
+			{
+				$sSelected = $sKey == $sDefault ? 
+					" selected=\"selected\" " : "";
+					
+				$sSelect .= "\t<option value=\"{$sKey}\"{$sSelected}>{$sValue}</option>\n";
+			}
+			
+			$sSelect .= "\n</select>\n";
+			
+			
+			if( $bReturn )
+			{
+				return( $sSelect );
+			}
+			else
+			{
+				echo $sSelect;
+			}
+		
+		} // Select()
+		
+		
+		/**
+		 * Generate a textarea element for the form. Note that the supplied attributes are not 
+		 * validated to be valid attributes for the element. Each element provided is added to the 
+		 * XHTML tag.		  
+		 * 
+		 * @argument array An array of attributes for the HTML element
+		 * @argument bool Controls whether or not to return the HTML, otherwise echo it, default false
+		 * @returns void/string If bReturn is true, returns a string with the XHTML, otherwise void
+		 */
+		public static function TextArea( $aAttributes, $bReturn = false )
+		{		
+			$sInput = "<textarea ";
+			
+			foreach( $aAttributes as $sKey => $sValue )
+			{
+				$sInput .= "{$sKey}=\"{$sValue}\" ";
+			}
+			
+			$sInput .= ">";
+			
+			if( isset( self::$aFields[ $aAttributes[ "name" ] ] ) )
+			{
+				$sInput .= self::$aFields[ $aAttributes[ "name" ] ];
+			}
+			
+			$sInput .= "</textarea>";
+			
+			
+			if( $bReturn )
+			{
+				return( $sInput );
+			}
+			else
+			{
+				echo $sInput;
+			}
+			
+		} // TextArea()
 
-	} // GenSelect()
-
-
-}; // class Form()
+	}; // Form()
 
 ?>

@@ -1,7 +1,17 @@
 
 body {
-   font-family: verdana, arial, san-serif;
-   font-size: 10pt;
+	background-color: #363636;
+	background-image: url( ../images/page-background.png );
+	background-repeat: repeat-x;
+   font: 10pt verdana, arial, helvetica, san-serif;
+   
+   text-align: center;
+}
+
+fieldset {
+	border: none; 
+	margin: 0px;
+	padding: 0px;
 }
 
 fieldset label {
@@ -11,7 +21,31 @@ fieldset label {
    width: 125px;
 }
 
-ul {
-   list-style-type: circle;
-   margin: 0px auto 0px auto;
+div#page {
+	margin: 0px auto;
+	text-align: left;
+	width: 700px;
+}
+
+div#header {
+	padding: 16px 0px;
+}
+
+div#body {
+	background-color: #ffffff;
+	padding: 8px;
+}
+
+
+h2.section-title {
+	font-size: 14pt;
+	font-weight: normal;
+	
+	margin-top: 0px;
+}
+
+ul.small-bulleted-list {
+	font-size: 8pt;
+	list-style-type: square;
+	margin-top: 0px;
 }
