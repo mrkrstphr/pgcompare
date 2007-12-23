@@ -1,5 +1,12 @@
 <?php
+
+	// SYSTEM DEFINES
 	
+	define( "DATABASE_HOST", "localhost" );
+	define( "DATABASE_USER", "postgres" );
+	define( "DATABASE_PASS", "" );
+	
+
 	error_reporting( E_ALL ^ E_NOTICE );
 
 	define( "BASE_PATH", realpath( "." ) );
@@ -10,12 +17,6 @@
 		":" . BASE_PATH . "/views";
 	
 	set_include_path( $sInclude_Path );
-
-	// SYSTEM DEFINES
-	
-	define( "DATABASE_HOST", "localhost" );
-	define( "DATABASE_USER", "postgres" );
-	define( "DATABASE_PASS", "" );
 	
 	
 	// OBJECT INSTANTIATION

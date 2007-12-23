@@ -51,7 +51,7 @@
 		{
 		?>
 		
-			<pre><?php echo $sSQL; ?></pre>
+			<pre class="sql"><?php echo $sSQL; ?></pre>
 		
 		<?php
 		}

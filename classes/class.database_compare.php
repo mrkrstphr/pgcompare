@@ -23,6 +23,7 @@
 		{
 			$oDB_Template1 = Database::getConnection( array(
 				"driver" => "postgres",
+				"host" => DATABASE_HOST,
 				"name" => "template1",
 				"user" => DATABASE_USER,
 				"password" => DATABASE_PASS
@@ -50,16 +51,23 @@
 			$sIgnore_Tables = str_replace( "*", "(.*)", $sIgnore_Tables );
 			$sIgnore_Tables = str_replace( ",", "|", $sIgnore_Tables );
 
+			// Database Connections:
 
-			//
-			// Database Connection
-			//
-
-			$oMaster_DB = new Database( "localhost", "postgres", "", $sMaster_Database );
-			$oMaster_DB->Connect();
-
-			$oUpdate_DB = new Database( "localhost", "postgres", "", $sUpdate_Database );
-			$oUpdate_DB->Connect();
+			$oMaster_DB = Database::GetConnection( array( 
+				"driver" => "postgres",
+				"host" => DATABASE_HOST,
+				"name" => $sMaster_Database, 
+				"user" => DATABASE_USER,
+				"password" => DATABASE_PASS 
+			) );
+			
+			$oUpdate_DB = Database::GetConnection( array( 
+				"driver" => "postgres",
+				"host" => DATABASE_HOST,
+				"name" => $sUpdate_Database, 
+				"user" => DATABASE_USER,
+				"password" => DATABASE_PASS 
+			) );
 
 
 			// Get all the tables in each database, and load them into an array
@@ -69,57 +77,95 @@
 			// if the table does exist in both arrays, compare column-by-column, creating
 			// ALTER statements for any differences.
 
-			$aMaster_Tables = $oMaster_DB->FetchTables();
-			$aUpdate_Tables = $oUpdate_DB->FetchTables();
+			$aMaster_Tables = $oMaster_DB->GetTables();
+			$aUpdate_Tables = $oUpdate_DB->GetTables();
 
 			$sSQL = "";
 			
 			// Loop all the tables:
 			foreach( $aMaster_Tables as $iIndex => $sTable )
-			{
+			{				
 				/*if( preg_match( $sIgnore_Tables, $sTable ) != 0 )
 				{
 					continue;
 				}*/
+				
+				$aMaster_Keys = $oMaster_DB->GetTablePrimaryKey( $sTable );
+				$aUpdate_Keys = $oUpdate_DB->GetTablePrimaryKey( $sTable );
+				
+				$aMaster_Refs = $oMaster_DB->GetTableForeignKeys( $sTable );
+				$aUpdate_Refs = $oUpdate_DB->GetTableForeignKeys( $sTable );
 
-				if( ( $iUpdate_Index = array_search( $sTable, $aUpdate_Tables ) ) === false )
+				if( !in_array( $sTable, $aUpdate_Tables ) )
 				{
 					// If this table doesn't exist in the update schema, we need to create it:
-					$sSQL .= "-- CREATE TABLE " . strtoupper( $sTable ) . "\n\n";
+					$sSQL .= "-- TABLE " . strtoupper( $sTable ) . "\n\n";
 
 					$sSQL .= "CREATE TABLE " . $sTable . " ( \n";
 
 					// Loop all of the columns in this table:
-					$aColumns = $oMaster_DB->FetchTableColumns( $iIndex );
-					for( $iColumn = 0; $iColumn < count( $aColumns ); $iColumn++ )
+					$aColumns = $oMaster_DB->GetTableColumns( $sTable );
+					
+					$sColumns = "";
+					
+					foreach( $aColumns as $sColumn => $aColumn )
 					{
-						$sSQL .= "\t" . $aColumns[ $iColumn ][ "name" ] . " " .
-							$this->FormatDataType( $aColumns[ $iColumn ][ "type" ], 
-								$aColumns[ $iColumn ][ "size" ] );
-
-						if( $iColumn < count( $aColumns ) - 1 )
+						$sColumns .= empty( $sColumns ) ? "" : ", \n";
+						
+						if( $this->IsColumnTypeSerial( $sTable, $aColumn ) )
 						{
-							$sSQL .= ", ";
+							$aColumn[ "type" ] = "serial";
 						}
-
-						$sSQL .= "\n";
+						
+						$sColumns .= "\t" . $sColumn . " " .
+							$this->FormatDataType( $aColumn[ "type" ] );
+						
+						if( count( $aMaster_Keys ) == 1 && in_array( $sColumn, $aMaster_Keys ) )
+						{
+							$sColumns .= " PRIMARY KEY";
+						}
+						
+						if( $aColumn[ "type" ] != "serial" && $aColumn[ "default" ] != "" )
+						{
+							$sColumns .= " DEFAULT " . $aColumn[ "default" ];
+						}
+						
+						if( ( $sReference = $this->GetColumnReference( $aColumn, $aMaster_Refs ) ) )
+						{
+							$sColumns .= " REFERENCES {$sReference}";
+						}
+						
+						
+						if( $aColumn[ "not-null" ] && !count( $aMaster_Keys ) == 1 && in_array( $sColumn, $aMaster_Keys ) ) 
+						{
+							$sColumns .= " NOT NULL";
+						}
+					}
+					
+					if( count( $aMaster_Keys ) > 1 )
+					{
+						$sColumns .= ", \n";
+						$sColumns .= "\tPRIMARY KEY( " . implode( ", ", $aMaster_Keys ) . " )";
 					}
 
-					$sSQL .= ");\n\n";
+					$sSQL .= $sColumns . "\n);\n\n";
 
 					// Get index definitions for the table:
-					$aIndexes = $oMaster_DB->FetchTableIndexDefinitions( $iIndex );
+					
+					$aIndexes = $this->FetchTableIndexDefinitions( $oMaster_DB, $iIndex );
+					
 					foreach( $aIndexes as $sIndex )
 					{
 						 $sSQL .= $sIndex . "; \n\n";
 					}
 				}
 				else
-				{
+				{					
+					/*
 					$bOutput = false;
 
-					$aMaster_Columns = $oMaster_DB->FetchTableColumns( $iIndex );
-					$aUpdate_Columns = $oUpdate_DB->FetchTableColumns( $iUpdate_Index );
+					$aMaster_Columns = $oMaster_DB->GetTableColumns( $sTable );
+					$aUpdate_Columns = $oUpdate_DB->GetTableColumns( $sTable );
 
 					for( $iColumn = 0; $iColumn < count( $aMaster_Columns ); $iColumn++ )
 					{
@@ -137,8 +183,9 @@
 									 $aMaster_Columns[ $iColumn ][ "size" ] ) . "; \n\n";
 						}
 					}
+					*/
 
-					$aMaster_Indexes = $oMaster_DB->FetchTableIndexes( $iIndex );
+					/*$aMaster_Indexes = $oMaster_DB->FetchTableIndexes( $iIndex );
 					$aUpdate_Indexes = $oUpdate_DB->FetchTableIndexes( $iUpdate_Index );
 
 					foreach( $aMaster_Indexes as $sField => $aIndex_Details )
@@ -162,10 +209,11 @@
 								"ON " . $sTable . 
 								"( " . $aIndex_Details[ "field" ] . " ); \n\n";
 						}
-					}
+					}*/
 				}
 			}
 
+			/*
 			$aMaster_Sequences = $oMaster_DB->FetchSequences();
 			$aUpdate_Sequences = $oUpdate_DB->FetchSequences();
 
@@ -176,6 +224,7 @@
 					$sSQL .= "CREATE SEQUENCE " . $sSequence . " START " . $iCurrent_Value . ";\n\n";
 				}
 			}
+			*/
 			
 			return( ( $bPretty ) ? $this->ColorizeSQL( $sSQL ) : $sSQL );
 			
@@ -198,9 +247,13 @@
 				"/(ALTER TABLE )/i",
 				"/(ADD COLUMN )/i",
 				"/( ON )/i", 
+				"/( NOT NULL)/i",
+				"/( DEFAULT)/i",
+				"/(PRIMARY KEY)/i",
+				"/( REFERENCES )/i",
 				"/( USING )/i" );
 				
-			$sReplace = "<span style=\"color: #333399;\"><b>$1</b></span>";
+			$sReplace = "<span style=\"color: #333399;\"><b>\$1</b></span>";
 
 			$sSQL = preg_replace( $aSQL_Statements, $sReplace, $sSQL );
 
@@ -235,40 +288,87 @@
 		// Description: Takes in a datatype and field size and converts them for use
 		//     in a query
 		//
-		function FormatDataType( $sType, $iSize )
+		function FormatDataType( $sType )
 		{
-			 // if size == -1, then the default size of that datatype is used
-
-			 $sType = str_replace( "_", "", $sType );
-			 $sType = strtoupper( $sType );
-
-			 if( $sType == 'VARCHAR' && $iSize != -1 )
-			 {
-				  // for varchar (and other some other fields, probably), you must subtract
-				  // the size of an int, as the actual size of the field is stored in
-				  // the field as well -- or something.
-
-				  $iSize = $iSize - 4;
-			 }
-
-			 if( $sType == "NUMERIC" )
-			 {
-				  // found this in the user comments of the PostgreSQL manual:
-				  $iPrecision = floor( $iSize / 65536 );
-				  $iDecimal = $iSize - $iPrecision * 65536 - 4;
-				  $iSize = " " . $iPrecision . ", " . $iDecimal . " ";
-			 }
-
-			 if( $iSize != -1 )
-			 {
-				  $sType .= "( " . $iSize . " )";
-			 }
-
-			 return( $sType );
+			return( "<b>{$sType}</b>" );
 
 		} // FormatDataType()
+		
+		
+		private function IsColumnTypeSerial( $sTable, $aColumn )
+		{			
+			if( strtolower( $aColumn[ "type" ] ) != "integer" )
+			{
+				return( false );
+			}
+			
+			$sSequenceName = $sTable . "_" . $aColumn[ "field" ] . "_seq";
+			
+			if( preg_match( "/{$sSequenceName}/i", $aColumn[ "default" ] ) )
+			{
+				return( true );
+			}
+			
+			return( false );
+			
+		} // IsColumnTypeSerial()
+		
+		
+		private function GetColumnReference( $aColumn, $aMaster_Refs )
+		{
+			$sColumnName = $aColumn[ "field" ];
+			
+			foreach( $aMaster_Refs as $aReference )
+			{
+				if( count( $aReference[ "local" ] ) != 1 || count( $aReference[ "foreign" ] ) != 1 )
+				{
+					break;
+				}
+				
+				$sLocal = reset( $aReference[ "local" ] );
+				$sForeign = reset( $aReference[ "foreign" ] );
+
+				if( $sLocal == $sColumnName )
+				{
+					return( $aReference[ "table" ] . "( " . $sForeign . " )" );
+				}
+			}
+		
+			return( false );
+		
+		} // GetColumnReference()
 	
 	
-	}; // class Database_Compare()
+		private function FetchTableIndexDefinitions( $oDatabase, $iTable )
+		{
+			$aIndexes = array();
+			
+			$sSQL = "SELECT 
+				*,
+				pg_get_indexdef( indexrelid ) AS index_def 
+			FROM
+				pg_index 
+			WHERE 
+				indrelid = " . $iTable;
+			
+			if( !( $oIndexes = $oDatabase->Query( $sSQL ) ) )
+			{
+				throw new QueryFailedException( $this->GetLastError() );
+			}
+			
+			foreach( $oIndexes as $oIndex )
+			{
+				if( $oIndex->indisprimary != "t" )
+				{
+					$aIndexes[] = $oIndex->index_def;
+				}
+			}
+			
+			return( $aIndexes );
+		
+		} // FetchTableIndexDefinitions()
+	
+	
+	}; // Database_Compare()
 
 ?>

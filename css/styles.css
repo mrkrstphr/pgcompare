@@ -24,7 +24,7 @@ fieldset label {
 div#page {
 	margin: 0px auto;
 	text-align: left;
-	width: 700px;
+	width: 770px;
 }
 
 div#header {
@@ -48,4 +48,15 @@ ul.small-bulleted-list {
 	font-size: 8pt;
 	list-style-type: square;
 	margin-top: 0px;
+}
+
+
+div.printr {
+	background-color: #ffffff;
+	padding: 8px;
+	text-align: left;
+}
+
+pre.sql {
+	font-size: 8pt;
 }

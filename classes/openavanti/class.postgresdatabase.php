@@ -34,7 +34,6 @@
       //////////////////////////////////////////////////////////////////////////////////////////////
 		protected function __construct( $aProfile )
       {
-      	
       	$sString = "";
       	
       	if( isset( $aProfile[ "host" ] ) )
@@ -58,7 +57,8 @@
 			
 			if( !$this->hDatabase )
 			{
-				throw new DatabaseConnectionException( "Failed to connect to Postgres server" );
+				throw new DatabaseConnectionException( "Failed to connect to Postgres server: " . 
+					$aProfile[ "host" ] . "." . $aProfile[ "name" ] );
 			}
 		} // __construct()
 
@@ -66,7 +66,7 @@
 		///////////////////////////////////////////////////////////////////////////////////////////
 		public function Query( $sSQL )
 		{
-		   $rResult = @pg_query( $sSQL );
+		   $rResult = @pg_query( $this->hDatabase, $sSQL );
 		
 			if( !$rResult )
 			{
@@ -297,10 +297,43 @@
 			
 			foreach( $oDatabases as $oDatabase )
 			{
-				$aDatabases[] = $oDatabase->datname;
+				$aDatabases[ $oDatabase->datname ] = $oDatabase->datname;
 			}
 			
 			return( $aDatabases );
+		
+		} // GetTables()
+		
+		
+		public function GetTables()
+		{        		
+      	$aTables = array();
+
+         $sSQL = "SELECT 
+				pt.tablename, 
+				pp.typrelid 
+			FROM 
+				pg_tables AS pt 
+			INNER JOIN 
+				pg_type AS pp ON pp.typname = pt.tablename 
+			WHERE
+				pt.tablename NOT LIKE 'pg_%' 
+			AND
+				pt.tablename NOT LIKE 'sql_%'";
+
+			if( !( $oTables = $this->Query( $sSQL ) ) )
+			{
+				throw new QueryFailedException( $this->GetLastError() );
+			}
+
+			$aTables = array();
+
+         foreach( $oTables as $oTable ) 
+         {
+             $aTables[ $oTable->typrelid ] = $oTable->tablename;
+         }
+
+         return( $aTables );
 		
 		} // GetTables()
 
@@ -352,7 +385,8 @@
 				pat.typname,
 				pa.atttypmod,
 				pa.attnotnull,
-				pad.adsrc
+				pg_get_expr( pad.adbin, pa.attrelid, true ) AS default_value,
+				format_type( pa.atttypid, pa.atttypmod ) AS data_type
 			FROM 
 				pg_attribute AS pa 
 			INNER JOIN 
@@ -378,8 +412,7 @@
 				
 			if( !( $oFields = $this->Query( $sSQL ) ) )
 			{
-				trigger_error( "Failed on Query. Error: " . $this->GetLastError() . ". SQL: {$sSQL}", E_USER_ERROR );
-				exit;
+				throw new QueryFailedException( $this->GetLastError() );
 			}
             
             
@@ -396,9 +429,9 @@
 				$aFields[ $oField->attname ] = array(
 					"number" => $oField->attnum,
 					"field" => $oField->attname, 
-					"type" => $oField->typname,
+					"type" => $oField->data_type,
 					"not-null" => $oField->attnotnull == "t",
-					"default" => $oField->adsrc
+					"default" => $oField->default_value
 				);
 				 
 				if( $oField->typname == "_varchar" )
@@ -441,8 +474,7 @@
 			
 			if( !( $oPrimaryKeys = $this->Query( $sSQL ) ) )
 			{
-				trigger_error( "SQL Error", E_USER_ERROR );
-				exit;
+				throw new QueryFailedException( $this->GetLastError() );
 			}
 
 			if( $oPrimaryKeys->Count() != 0 )
@@ -581,8 +613,7 @@
 				
 			if( !( $oForeignKeys = $this->Query( $sSQL ) ) )
 			{
-				trigger_error( "Failed on Query: " . $sSQL, E_USER_ERROR );
-				exit;
+				throw new QueryFailedException( $this->GetLastError() );
 			}
 
 	      foreach( $oForeignKeys as $oForeignKey )
@@ -686,8 +717,7 @@
 							
 			if( !( $oResultSet = $this->Query( $sSQL ) ) )
 			{
-				trigger_error( "Failed on Query: {$sSQL}", E_USER_ERROR );
-				exit;
+				throw new QueryFailedException( $this->GetLastError() );
 			}
 			
 			return( $oResultSet->Count() );
