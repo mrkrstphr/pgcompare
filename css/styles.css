@@ -1,0 +1,17 @@
+
+body {
+   font-family: verdana, arial, san-serif;
+   font-size: 10pt;
+}
+
+fieldset label {
+   display: block;
+   float: left;
+   padding: 4px;
+   width: 125px;
+}
+
+ul {
+   list-style-type: circle;
+   margin: 0px auto 0px auto;
+}
