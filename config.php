@@ -4,7 +4,7 @@
 	
 	define( "DATABASE_HOST", "localhost" );
 	define( "DATABASE_USER", "postgres" );
-	define( "DATABASE_PASS", "" );
+	define( "DATABASE_PASS", "w3bpzzw0rd" );
 	
 
 	error_reporting( E_ALL ^ E_NOTICE );

@@ -15,5 +15,4 @@
 		</div>
 		
 		<div id="body">
-			<h2 class="section-title"> Database Compare </h2>
 

@@ -81,7 +81,7 @@
 		///////////////////////////////////////////////////////////////////////////////////////////
 		public function Begin()
 		{
-			$rResult = @pg_query( "BEGIN" ) or
+			$rResult = @pg_query( $this->hDatabase, "BEGIN" ) or
 				trigger_error( "Failed to begin transaction", E_USER_ERROR );
 
 			return( $rResult ? true : false );
@@ -92,7 +92,7 @@
 		///////////////////////////////////////////////////////////////////////////////////////////
 		public function Commit()
 		{
-			$rResult = @pg_query( "COMMIT" ) or
+			$rResult = @pg_query( $this->hDatabase, "COMMIT" ) or
 				trigger_error( "Failed to commit transaction", E_USER_ERROR );
 		
 			return( $rResult ? true : false );
@@ -103,7 +103,7 @@
 		///////////////////////////////////////////////////////////////////////////////////////////
 		public function Rollback()
 		{
-			$rResult = @pg_query( "ROLLBACK" ) or
+			$rResult = @pg_query( $this->hDatabase, "ROLLBACK" ) or
 				trigger_error( "Failed to rollback transaction", E_USER_ERROR );
 		
 			return( $rResult ? true : false );
@@ -119,7 +119,7 @@
 			AS
 				next_val";
             
-        	$rResult = @pg_query( $sSQL ) or
+        	$rResult = @pg_query( $this->hDatabase, $sSQL ) or
             	trigger_error( "Failed to query sequence value: " . $this->getLastError(), 
 				 	E_USER_ERROR );
             
@@ -143,7 +143,7 @@
 			AS
 				current_value";
             
-	        $rResult = @pg_query( $sSQL ) or
+	        $rResult = @pg_query( $this->hDatabase, $sSQL ) or
 	            trigger_error( "Failed to query sequence value: " . $this->getLastError(), 
 					 	E_USER_ERROR );
 	            
@@ -172,7 +172,7 @@
 			AS
 				current_value";
             
-			$rResult = @pg_query( $sSQL ) or
+			$rResult = @pg_query( $this->hDatabase, $sSQL ) or
 				trigger_error( "Failed to query sequence value: " . $this->getLastError(), 
 				E_USER_ERROR );
 	            
@@ -201,7 +201,7 @@
 			AS
 				next_value";
             
-	      $rResult = @pg_query( $sSQL ) or
+	      $rResult = @pg_query( $this->hDatabase, $sSQL ) or
 	         trigger_error( "Failed to query sequence value: " . $this->getLastError(), 
 					E_USER_ERROR );
 	            
@@ -579,7 +579,8 @@
          		"name" => $sName,
          		"local" => $aLocalFields,
          		"foreign" => $aForeignFields,
-         		"type" => "m-1"
+         		"type" => "m-1",
+         		"dependency" => true
          	);
       	
       		$iCount++;
@@ -671,7 +672,8 @@
 	         	"name" => $oForeignKey->typname,
 					"local" => $aLocalFields,
 	         	"foreign" => $aForeignFields,
-	         	"type" => $sType
+	         	"type" => $sType,
+	         	"dependency" => false
 	         );
 	         	
          	$iCount++;

@@ -36,12 +36,13 @@ div#body {
 	padding: 8px;
 }
 
+h2.no-top {
+	margin-top: 0px;
+}
 
 h2.section-title {
 	font-size: 14pt;
 	font-weight: normal;
-	
-	margin-top: 0px;
 }
 
 ul.small-bulleted-list {

@@ -1,6 +1,8 @@
 <?php
 	require( "header.php" );
 ?>
+	
+	<h2 class="section-title no-top"> Database Compare </h2>
 
 
 	<ul class="small-bulleted-list">
@@ -50,10 +52,23 @@
 		if( isset( $sSQL ) )
 		{
 		?>
-		
-			<pre class="sql"><?php echo $sSQL; ?></pre>
-		
-		<?php
+			<h2 class="section-title">Comparison Results</h2>
+			
+		<?php 
+			if( !empty( $sSQL ) )
+			{
+			?>
+				<pre class="sql"><?php echo $sSQL; ?></pre>
+			<?php
+			}
+			else
+			{
+			?>
+				<p>
+					No differences found
+				</p>
+			<?php
+			}
 		}
 	?>
 

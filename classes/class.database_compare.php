@@ -325,6 +325,11 @@
 					break;
 				}
 				
+				if( !$aReference[ "dependency" ] ) 
+				{
+					break;
+				}
+				
 				$sLocal = reset( $aReference[ "local" ] );
 				$sForeign = reset( $aReference[ "foreign" ] );
 
